@@ -51,16 +51,17 @@ module TwitchBot
                             line = resp.gets
                             match = line.match(/^:?(.+)!(.+) PRIVMSG #(.+) :(.+)$/)
                             Log.info "Server response: #{line}"
+                            Log.info "The match: #{match}"
                             message = match && match[4]
                             message.to_s.chomp!
-                            user = match && match[3]
+                            display_name = line.match(/display-name=([a-zA-Z0-9][\w]{3,24}+);/)
+                            user = display_name && display_name[1]
+                            Log.info "The user: #{user}"
                             user.to_s.chomp!
 
                             case message
                             when /^!hello$/
                                 send_chat_message "Hello there #{user}"
-                            when /^!why$/
-                                send_chat_message "lmorchard, why you steal my commands?"
                             when /^!discord$/
                                 send_chat_message "Please join our Discord community by clicking on the following link: #{ENV['DISCORD_LINK']}"
                             when /^!shutdown$/
