@@ -51,7 +51,7 @@ module TwitchBot
                         match   = line.match(/^:(.+)!(.+) PRIVMSG #(.+) :(.+)$/)
                         message = match && match[4]
                         message.to_s.chomp!
-                        user = match && match[3]
+                        user = match && match[1]
                         user.to_s.chomp!
 
                         case message
