@@ -37,9 +37,9 @@ module TwitchBot
 
             socket.puts("PASS #{@@chat_token}")
             socket.puts("NICK #{@@botname}") 
-            #socket.puts("CAP REQ :twitch.tv/tags")
-            #socket.puts("CAP REQ :twitch.tv/commands")
-            #socket.puts("CAP REQ :twitch.tv/membership")
+            socket.puts("CAP REQ :twitch.tv/tags")
+            socket.puts("CAP REQ :twitch.tv/commands")
+            socket.puts("CAP REQ :twitch.tv/membership")
             socket.puts("JOIN #{'#' + @@channel}")
 
             Thread.start do
@@ -47,20 +47,27 @@ module TwitchBot
                     ready = IO.select([socket])
 
                     ready[0].each do |resp|
-                        line = resp.gets
-                        match   = line.match(/^:(.+)!(.+) PRIVMSG #(.+) :(.+)$/)
-                        message = match && match[4]
-                        message.to_s.chomp!
-                        user = match && match[1]
-                        user.to_s.chomp!
+                        begin
+                            line = resp.gets
+                            match = line.match(/^:?(.+)!(.+) PRIVMSG #(.+) :(.+)$/)
+                            Log.info "Server response: #{line}"
+                            message = match && match[4]
+                            message.to_s.chomp!
+                            user = match && match[3]
+                            user.to_s.chomp!
 
-                        case message
-                        when /^!hello$/
-                            send_chat_message "Hello there #{user}"
-                        when /^!discord$/
-                            send_chat_message "Please join our Discord community by clicking on the following link: #{ENV['DISCORD_LINK']}"
-                        when /^!shutdown$/
-                            stop
+                            case message
+                            when /^!hello$/
+                                send_chat_message "Hello there #{user}"
+                            when /^!why$/
+                                send_chat_message "lmorchard, why you steal my commands?"
+                            when /^!discord$/
+                                send_chat_message "Please join our Discord community by clicking on the following link: #{ENV['DISCORD_LINK']}"
+                            when /^!shutdown$/
+                                stop
+                            end
+                        rescue SocketError => se
+                            Log.info "Got the following error with the current socket: #{se}"
                         end
                     end
                 end
