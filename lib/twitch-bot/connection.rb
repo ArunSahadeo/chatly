@@ -1,4 +1,6 @@
 require 'twitch-bot/client'
+require 'twitch-bot/helpers'
+require 'twitch-bot/commands'
 
 Thread.abort_on_exception = true
 
@@ -20,18 +22,14 @@ module TwitchBot
             @socket = TCPSocket.new(endpoint, port)
         end
 
-        def send(message)
-            Log.info 'Sending command'
-            socket.puts message
-        end
-
         def send_chat_message(message)
-            Log.info 'Sending message'
+            Log.info "Sending message"
             socket.puts("PRIVMSG #{'#' + @@channel} :#{message}\r\n")
         end
 
         def run
             @active = true
+            is_connected = false
 
             Log.info 'Preparing to connect...'
 
@@ -40,33 +38,32 @@ module TwitchBot
             socket.puts("CAP REQ :twitch.tv/tags")
             socket.puts("CAP REQ :twitch.tv/commands")
             socket.puts("CAP REQ :twitch.tv/membership")
-            socket.puts("JOIN #{'#' + @@channel}")
+            socket.puts("JOIN ##{@@channel}")
 
             Thread.start do
                 while (active) do
                     ready = IO.select([socket])
 
+                    if ready && !is_connected
+                        is_connected = true
+                        puts "Connection established."
+                    end
+
                     ready[0].each do |resp|
                         begin
                             line = resp.gets
                             match = line.match(/^:?(.+)!(.+) PRIVMSG #(.+) :(.+)$/)
-                            Log.info "Server response: #{line}"
-                            Log.info "The match: #{match}"
+                            user_roles = line.match(/badges=([A-Za-z0-9]+)/).to_s.split("=").delete_at(0)
+
                             message = match && match[4]
                             message.to_s.chomp!
+
                             display_name = line.match(/display-name=([a-zA-Z0-9][\w]{3,24}+);/)
                             user = display_name && display_name[1]
-                            Log.info "The user: #{user}"
                             user.to_s.chomp!
 
-                            case message
-                            when /^!hello$/
-                                send_chat_message "Hello there #{user}"
-                            when /^!discord$/
-                                send_chat_message "Please join our Discord community by clicking on the following link: #{ENV['DISCORD_LINK']}"
-                            when /^!shutdown$/
-                                stop
-                            end
+                            commands = Commands.new message, user_roles
+
                         rescue SocketError => se
                             Log.info "Got the following error with the current socket: #{se}"
                         end

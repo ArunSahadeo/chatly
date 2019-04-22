@@ -7,3 +7,4 @@ source "https://rubygems.org"
 # gem "rails"
 
 gem "dotenv"
+gem "require_all"

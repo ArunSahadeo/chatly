@@ -5,6 +5,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 require 'bundler/setup'
 require 'dotenv'
+require 'require_all'
 require 'logger'
 require 'open-uri'
 require 'socket'
